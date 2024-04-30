@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 from tempfile import TemporaryDirectory
 from typing import ByteString
@@ -16,6 +17,12 @@ class BuildLambdaPluginError(Exception):
 
 CONTAINER_CACHE_DIR = "/opt/lambda/cache"
 CURRENT_WORK_DIR = os.getcwd()
+
+MKDIR_CMD =  "mkdir -p" 
+CHAIN_OPERATOR = "&&"
+if platform.system() == 'Windows':
+    MKDIR_CMD =  "mkdir"
+    CHAIN_OPERATOR = ";"
 
 
 def _run_process(self: EnvCommand, cmd: str) -> ByteString:
@@ -74,6 +81,7 @@ def create_separate_layer_package(
                 copy_to(requirements_path, f"{container.id}:/requirements.txt")
                 self.line("Installing requirements", style="info")
                 install_deps_cmd = parameters["install_deps_cmd"].format(
+                    mkdir=MKDIR_CMD, chain_operator=CHAIN_OPERATOR,
                     container_cache_dir=CONTAINER_CACHE_DIR,
                     requirements="/requirements.txt",
                 )
@@ -87,6 +95,7 @@ def create_separate_layer_package(
                           layer_output_dir)
         else:
             install_deps_cmd = parameters["install_deps_cmd"].format(
+                mkdir=MKDIR_CMD, chain_operator=CHAIN_OPERATOR,
                 container_cache_dir=layer_output_dir, requirements=requirements_path
             )
 
@@ -116,6 +125,7 @@ def create_separated_function_package(self: EnvCommand, parameters: dict):
         self.line("Building function package...", style="info")
 
         install_cmd = parameters["install_no_deps_cmd"].format(
+            mkdir=MKDIR_CMD, chain_operator=CHAIN_OPERATOR,
             package_dir=package_dir)
 
         self.line(f"Executing: {install_cmd}", style="debug")
@@ -153,6 +163,7 @@ def create_package(self: EnvCommand, parameters: dict, in_container: bool = True
                 copy_to(requirements_path, f"{container.id}:/requirements.txt")
                 self.line("Installing requirements", style="info")
                 install_deps_cmd = parameters["install_deps_cmd"].format(
+                    mkdir=MKDIR_CMD, chain_operator=CHAIN_OPERATOR,
                     container_cache_dir=CONTAINER_CACHE_DIR,
                     requirements="/requirements.txt",
                 )
@@ -170,6 +181,7 @@ def create_package(self: EnvCommand, parameters: dict, in_container: bool = True
                 )
         else:
             install_deps_cmd = parameters["install_deps_cmd"].format(
+                mkdir=MKDIR_CMD, chain_operator=CHAIN_OPERATOR,
                 container_cache_dir=package_dir,
                 requirements=requirements_path
             )
@@ -178,6 +190,7 @@ def create_package(self: EnvCommand, parameters: dict, in_container: bool = True
             _run_process(self, install_deps_cmd)
 
         install_cmd = parameters["install_no_deps_cmd"].format(
+            mkdir=MKDIR_CMD, chain_operator=CHAIN_OPERATOR,
             package_dir=package_dir)
 
         os.chdir(CURRENT_WORK_DIR)
